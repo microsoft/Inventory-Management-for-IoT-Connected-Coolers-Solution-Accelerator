@@ -1,0 +1,2 @@
+*.sh text eol=lf
+*.json filter=lfs diff=lfs merge=lfs -text

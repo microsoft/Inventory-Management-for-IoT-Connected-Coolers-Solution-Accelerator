@@ -1,0 +1,16 @@
+# Copyright (c) Microsoft Corporation. All rights reserved
+# Licensed under the MIT license. See LICENSE file in the project root for more information
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: Docker@2
+  inputs:
+    containerRegistry: 'Neal Sandbox ACR'
+    repository: 'coolermodel'
+    command: 'buildAndPush'
+    Dockerfile: 'iotEdge/modules/CoolerModel/Dockerfile'

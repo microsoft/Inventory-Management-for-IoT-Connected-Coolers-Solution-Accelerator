@@ -1,0 +1,3 @@
+ItemSku,ListPrice,MinimumStockQuantity,ItemName,ItemDescription,ShelfLifeDays,MinimumStorageTemperature,MaximumStorageTemperature
+cdc_00,2.30,10,Diet Contoso Cola,Delicious diet cola,2000,33,110
+crc_90,2.35,14,Contoso Cola,Delicious cola,2000,33,110

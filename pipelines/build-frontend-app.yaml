@@ -1,0 +1,73 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: UseNode@1
+  displayName: Use Node 16.x
+  inputs:
+    version: 16.x
+    
+- task: Npm@1
+  displayName: npm install
+  inputs:
+    command: 'install'
+    workingDir: 'frontend/cooler-app'
+    verbose: false
+
+- task: Npm@1
+  displayName: npm build
+  inputs:
+    command: 'custom'
+    workingDir: 'frontend/cooler-app'
+    customCommand: 'run build --prod'
+
+- task: Bash@3
+  displayName: 'Copy build folder to server folder'
+  inputs:
+    targetType: 'inline'
+    script: |
+      cp -r frontend/cooler-app/build frontend/server
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+- task: Npm@1
+  displayName: npm install
+  inputs:
+    command: 'install'
+    workingDir: 'frontend/server'
+    verbose: false
+
+# creating the zip for app deployment
+- task: ArchiveFiles@2
+  displayName: ArchiveFiles
+  inputs:
+    rootFolderOrFile: frontend/server
+    includeRootFolder: false
+    archiveFile: $(Build.ArtifactStagingDirectory)/connected-cooler-app.zip
+    archiveType: "zip"
+    replaceExistingArchive: true
+
+- task: PublishPipelineArtifact@1
+  displayName: Publish Pipeline Artifact
+  inputs:
+    path: $(Build.ArtifactStagingDirectory)
+    artifactName: frontend_app
+
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'Neal Analytics (Internal)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      RESOURCE_GROUP="rg-webApp-test"
+      WEBAPP_NAME="aicooler-applvmv"
+      WEBAPP_DEPLOYMENT_ZIP="$(Build.ArtifactStagingDirectory)/connected-cooler-app.zip"
+      az account set -s 1d6f8625-52ba-4273-a625-5a5008b3ae07
+      az webapp deployment source config-zip --resource-group "$RESOURCE_GROUP" --name "$WEBAPP_NAME" --src "$WEBAPP_DEPLOYMENT_ZIP" --output "none"

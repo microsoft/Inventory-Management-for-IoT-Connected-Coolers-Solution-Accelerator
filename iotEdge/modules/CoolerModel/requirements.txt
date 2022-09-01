@@ -1,0 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved
+# Licensed under the MIT license. See LICENSE file in the project root for more information
+pika==1.1.0
+motpy==0.0.10
+filterpy==1.4.5
+azure-iot-device==2.10.0

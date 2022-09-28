@@ -78,7 +78,7 @@ If you are using an existing subscription, some may already be registered.
 
 Use this link to deploy the simulation into your Azure Subscription. 
 
-[![Deploy to Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https%3A%2F%2Fgithub.com%2Fmicrosoft%2FInventory-Management-for-IoT-Connected-Coolers-Solution-Accelerator%2Fblob%2Fmain%2Fdeployment%2Farm-templates%2Fstart.deploy.json%3Fraw%3Dtrue)
+[![Deploy to Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fstorageaicooler.blob.core.windows.net%2Faicooler%2Fstart.deploy.json%3Fsp%3Drl%26st%3D2022-08-30T17%3A15%3A29Z%26se%3D2022-12-31T01%3A15%3A29Z%26sv%3D2021-06-08%26sr%3Dc%26sig%3DaYYZZYSOO%252B0exPv1cRaKJtiDyn0z%252FSn8S3xdyB8AJRQ%253D)
 
 You will be prompted to fill out several parameters 
 1. Subscription -- The subscription in which you would like to deploy the simulation 

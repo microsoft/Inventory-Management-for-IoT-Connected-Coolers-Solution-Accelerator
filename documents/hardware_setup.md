@@ -7,7 +7,7 @@ This file describes how to setup and configure the hardware needed deploy a phys
 ## IoT Edge Architectural Overview
 This is a diagram of the IoT Edge solution we will be building. 
 
-![IoT Edge Architecture Diagram](../documents/media/iotedge_architecture.png)
+![IoT Edge Architecture Diagram](../documents/media/iotedge_architecture_v2.png)
 
 ### Azure IoT Edge for Linux on Windows (EFLOW)
 [Azure IoT Edge for Linux on Windows (EFLOW)](https://docs.microsoft.com/en-us/windows/iot/iot-enterprise/azure-iot-edge-for-linux-on-windows) 

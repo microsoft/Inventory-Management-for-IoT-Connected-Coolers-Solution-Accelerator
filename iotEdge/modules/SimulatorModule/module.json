@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2dcba527de8a8371fc7381849c30486bc7472052aee673711670ed67340274e5
-size 402
+{
+  "$schema-version": "0.0.1",
+  "description": "",
+  "image": {
+    "repository": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/simulatormodule",
+    "tag": {
+      "version": "0.0.1",
+      "platforms": {
+        "amd64": "./Dockerfile.amd64",
+        "amd64.debug": "./Dockerfile.amd64.debug"
+      }
+    },
+    "buildOptions": [],
+    "contextPath": "./"
+  },
+  "language": "python"
+}

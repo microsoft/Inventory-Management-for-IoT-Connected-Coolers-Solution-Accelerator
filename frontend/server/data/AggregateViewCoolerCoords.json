@@ -1,3 +1,1 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ead247db55e113af09f14a950e7903e2eff2c4e84db4cbdffc59d143c7ab9b60
-size 661
+[{"coolerId":0,"coolerName":"Drink Cooler 1","locationName":"bld-18-3","locationLatitude":47.644075,"locationLongitude":-122.129375},{"coolerId":1,"coolerName":"Drink Cooler 2","locationName":"bld-25-2","locationLatitude":47.644892,"locationLongitude":-122.131306},{"coolerId":2,"coolerName":"Drink Cooler 3","locationName":"bld-44-5","locationLatitude":47.640611,"locationLongitude":-122.13306},{"coolerId":3,"coolerName":"Drink Cooler 4","locationName":"bld-42-5","locationLatitude":47.638998,"locationLongitude":-122.133103},{"coolerId":4,"coolerName":"Drink Cooler 5","locationName":"bld-122-4","locationLatitude":47.646569,"locationLongitude":-122.138592}]

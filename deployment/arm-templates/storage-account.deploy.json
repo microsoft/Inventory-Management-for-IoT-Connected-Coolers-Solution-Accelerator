@@ -1,3 +1,46 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ab11d629cc73d1f02bbb52b3577951b54ca9d7ddc53c2d4ec84ce0a2d79b7357
-size 1493
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namePrefix": {
+            "defaultValue": "aicooler",
+            "minLength": 3,
+            "maxLength": 23,
+            "type": "String",
+            "metadata": {
+                "description": "Used to qualify the names of all of the resources created in this template."
+            }
+        },
+        "resourceTags": {
+            "defaultValue": {
+                "sample": "inventory-management-for-iot-connected-coolers-solution-accelerator"
+            },
+            "type": "Object"
+        }
+    },
+    "variables": {
+        "storageAccountName": "[concat(parameters('namePrefix'),uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "tags": "[parameters('resourceTags')]",
+            "properties": {
+                "accessTier": "Hot"
+            }
+        }
+    ],
+    "outputs": {
+        "storageAccountName": {
+            "type": "String",
+            "value": "[variables('storageAccountName')]"
+        }
+    }
+}

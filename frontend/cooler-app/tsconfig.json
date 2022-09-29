@@ -1,3 +1,12 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:03807aaca463da85881417024d1b48e584673ae3912a19f8fa488479bd43e772
-size 250
+{
+    "compilerOptions": {
+      "outDir": "example-app/dist",
+      "sourceMap": true,
+      "noImplicitAny": true,
+      "module": "es6",
+      "target": "es5",
+      "jsx": "react",
+      "allowJs": true,
+      "moduleResolution": "node"
+    }
+  }

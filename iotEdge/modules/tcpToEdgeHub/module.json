@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:07caa2c70372b3321e785ea46211e912d554533e9777f1bf13ec0f4502c2c22e
-size 465
+{
+    "$schema-version": "0.0.15",
+    "description": "",
+    "image": {
+        "repository": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/doorsensor",
+        "tag": {
+            "version": "0.0.1",
+            "platforms": {
+                "amd64": "./Dockerfile.amd64", 
+                "amd64.debug": "./Dockerfile.amd64.debug"
+            }
+        },
+        "buildOptions": [],
+        "contextPath": "./"
+    },
+    "language": "csharp"
+}

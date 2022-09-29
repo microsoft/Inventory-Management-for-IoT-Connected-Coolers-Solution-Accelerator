@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9dc942a9afb0967a1fc514a564031d901415dccd954935fae10ebe7f9f2d8423
-size 282
+[
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemRemoved",
+        "time": 10.05,
+        "frame": 201,
+        "type": "contoso",
+        "pos": [
+            355.24102891830495,
+            337.02728585847626
+        ]
+    }
+]

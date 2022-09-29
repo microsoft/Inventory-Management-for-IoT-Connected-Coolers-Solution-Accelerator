@@ -1,0 +1,14 @@
+[
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemAdded",
+        "time": 11.75,
+        "frame": 235,
+        "type": "contoso",
+        "pos": [
+            159.92224340167573,
+            309.9327989031496
+        ]
+    }
+]

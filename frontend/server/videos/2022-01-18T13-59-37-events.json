@@ -1,0 +1,50 @@
+[
+    {
+        "camera": "bottom",
+        "cooler_id": "DemoCooler",
+        "event": "itemRemoved",
+        "time": 5.0,
+        "frame": 100,
+        "type": "diet-contoso",
+        "pos": [
+            525.2718554993843,
+            360.1189032996509
+        ]
+    },
+    {
+        "camera": "bottom",
+        "cooler_id": "DemoCooler",
+        "event": "itemRemoved",
+        "time": 15.45,
+        "frame": 309,
+        "type": "diet-contoso",
+        "pos": [
+            471.5414178153138,
+            360.14337077737423
+        ]
+    },
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemRemoved",
+        "time": 17.95,
+        "frame": 359,
+        "type": "contoso",
+        "pos": [
+            205.77929845947307,
+            345.6562154625035
+        ]
+    },
+    {
+        "camera": "bottom",
+        "cooler_id": "DemoCooler",
+        "event": "itemAdded",
+        "time": 21.9,
+        "frame": 438,
+        "type": "diet-contoso",
+        "pos": [
+            542.7213389986456,
+            359.64719482514965
+        ]
+    }
+]

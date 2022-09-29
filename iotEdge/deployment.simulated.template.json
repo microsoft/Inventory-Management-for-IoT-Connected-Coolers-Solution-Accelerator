@@ -1,0 +1,145 @@
+{
+  "$schema-template": "4.0.0",
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "schemaVersion": "1.1",
+        "runtime": {
+          "type": "docker",
+          "settings": {
+            "minDockerVersion": "v1.25",
+            "loggingOptions": "",
+            "registryCredentials": {
+              "$CONTAINER_REGISTRY_NAME_myacr": {
+                "username": "$CONTAINER_REGISTRY_USERNAME_myacr",
+                "password": "$CONTAINER_REGISTRY_PASSWORD_myacr",
+                "address": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io"
+              }
+            }
+          }
+        },
+        "systemModules": {
+          "edgeAgent": {
+            "type": "docker",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.2",
+              "createOptions": "{}"
+            }
+          },
+          "edgeHub": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.2",
+              "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"5671/tcp\":[{\"HostPort\":\"5671\"}],\"8883/tcp\":[{\"HostPort\":\"8883\"}],\"443/tcp\":[{\"HostPort\":\"443\"}]}}}"
+            }
+          }
+        },
+        "modules": {
+          "SimulatorModule": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "startupOrder": 1,
+            "settings": {
+              "image": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/simulatormodule:0.0.1-amd64",
+              "createOptions": "{\"HostConfig\":{\"LogConfig\":{\"Type\":\"\",\"Config\":{\"max-size\":\"10m\",\"max-file\":\"10\"}},\"PortBindings\":{\"8554/tcp\":[{\"HostPort\":\"8554\"}]}}}"
+            }
+          },
+          "rabbitmq-broker": {
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always",
+            "startupOrder": 2,
+            "settings": {
+              "image": "rabbitmq:3-management",
+              "createOptions": "{\"HostConfig\":{\"LogConfig\":{\"Type\":\"\",\"Config\":{\"max-size\":\"10m\",\"max-file\":\"10\"}},\"PortBindings\":{\"5672/tcp\":[{\"HostPort\":\"5672\"}],\"15672/tcp\":[{\"HostPort\":\"15672\"}]}}}"
+            },
+            "env": {
+              "RABBITMQ_CONTAINER_HOST": {
+                "value": "$RABBITMQ_CONTAINER_HOST"
+              },
+              "RABBITMQ_DEFAULT_USER": {
+                "value": "$RABBITMQ_DEFAULT_USER"
+              },
+              "RABBITMQ_DEFAULT_PASS": {
+                "value": "$RABBITMQ_DEFAULT_PASS"
+              },
+              "RABBITMQ_HOSTNAME": {
+                "value": "$RABBITMQ_HOSTNAME"
+              }
+            }
+          },
+          "RecordingManagerModule": {
+            "type": "docker",
+            "version": "1.0",
+            "status": "running",
+            "restartPolicy": "always",
+            "startupOrder": 4,
+            "settings": {
+              "image": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/recordingmanager:0.0.1-amd64",
+              "createOptions": "{\"HostConfig\":{\"LogConfig\":{\"Type\":\"\",\"Config\":{\"max-size\":\"10m\",\"max-file\":\"10\"}},\"Binds\":[\"$VIDEO_OUTPUT_FOLDER_ON_DEVICE:/app/outputs/\"]}}"
+            },
+            "env": {
+              "RABBITMQ_HOST_LOCATION": {
+                "value": "$RABBITMQ_HOSTNAME"
+              },
+              "RABBITMQ_DEFAULT_USER": {
+                "value": "$RABBITMQ_DEFAULT_USER"
+              },
+              "RABBITMQ_DEFAULT_PASS": {
+                "value": "$RABBITMQ_DEFAULT_PASS"
+              },
+              "IS_SIMULATED": {
+                "value": "$IS_SIMULATED"
+              },
+              "TOP_CAMERA_URL": {
+                "value": "$TOP_CAMERA_URL"
+              },
+              "BOTTOM_CAMERA_URL": {
+                "value": "$BOTTOM_CAMERA_URL"
+              } 
+            }
+          },
+          "CoolerModel": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "startupOrder": 3,
+            "settings": {
+              "image": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/coolermodel:0.0.1-amd64",
+              "createOptions": "{\"HostConfig\":{\"LogConfig\":{\"Type\":\"\",\"Config\":{\"max-size\":\"10m\",\"max-file\":\"10\"}},\"Binds\":[\"$VIDEO_OUTPUT_FOLDER_ON_DEVICE:/app/outputs/\"],\"PortBindings\":{\"8888/tcp\":[{\"HostPort\":\"8888\"}]}}}"
+            },
+            "env": {
+              "RABBITMQ_HOST_LOCATION": {
+                "value": "$RABBITMQ_HOSTNAME"
+              },
+              "RABBITMQ_DEFAULT_USER": {
+                "value": "$RABBITMQ_DEFAULT_USER"
+              },
+              "RABBITMQ_DEFAULT_PASS": {
+                "value": "$RABBITMQ_DEFAULT_PASS"
+              }
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.1",
+        "routes": {
+          "doorSignaltoRecordingManager": "FROM /messages/modules/SimulatorModule/outputs/output1 INTO  BrokeredEndpoint(\"/modules/RecordingManagerModule/inputs/input1\")",
+          "AIProcessorToUpstream": "FROM /messages/modules/CoolerModel/outputs/* INTO $upstream"
+        },
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 7200
+        }
+      }
+    }
+  }
+}

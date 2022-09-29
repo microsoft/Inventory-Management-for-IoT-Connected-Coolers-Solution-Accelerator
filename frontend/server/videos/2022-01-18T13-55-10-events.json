@@ -1,0 +1,26 @@
+[
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemAdded",
+        "time": 7.35,
+        "frame": 147,
+        "type": "contoso",
+        "pos": [
+            404.19833591240996,
+            291.80277799060246
+        ]
+    },
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemAdded",
+        "time": 9.8,
+        "frame": 196,
+        "type": "diet-contoso",
+        "pos": [
+            129.28823510498182,
+            305.3776116198087
+        ]
+    }
+]

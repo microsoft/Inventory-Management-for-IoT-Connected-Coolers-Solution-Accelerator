@@ -1,0 +1,12 @@
+[
+    {
+        "event": "itemAdded",
+        "frame": 290,
+        "type": "diet-contoso"
+    },
+    {
+        "event": "itemAdded",
+        "frame": 340,
+        "type": "contoso"
+    }
+]

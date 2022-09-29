@@ -1,0 +1,37 @@
+# Copyright (c) Microsoft Corporation. All rights reserved
+# Licensed under the MIT license. See LICENSE file in the project root for more information
+FROM python:3.8-slim
+
+ARG WD=/usb-to-rtsp
+WORKDIR $WD
+
+WORKDIR /app
+
+RUN pip install -U pip
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgstreamer1.0-0 \
+    gstreamer1.0-plugins-ugly \
+    \
+    gir1.2-gst-rtsp-server-1.0 \
+    \
+    libgirepository1.0-dev \
+    libcairo2-dev \
+    wget \
+    \
+    && pip install \
+        pycairo \
+        PyGObject \
+        opencv-python \
+        azure-iot-device
+
+EXPOSE 8554
+
+# Download videos for simulation
+RUN wget "https://connectedcoolersa.blob.core.windows.net/videos/cooler-cam-bottom.mp4?sp=r&st=2022-02-22T21:04:17Z&se=2030-01-01T08:00:00Z&spr=https&sv=2020-08-04&sr=c&sig=bpP005G2fdr0IuE5qYf7%2F%2FwhG484ky5lItN02AqJSlM%3D" -k -O cooler-cam-bottom.mp4 && \
+    wget "https://connectedcoolersa.blob.core.windows.net/videos/cooler-cam-top.mp4?sp=r&st=2022-02-22T21:04:17Z&se=2030-01-01T08:00:00Z&spr=https&sv=2020-08-04&sr=c&sig=bpP005G2fdr0IuE5qYf7%2F%2FwhG484ky5lItN02AqJSlM%3D" -k -O cooler-cam-top.mp4
+
+COPY open-close-events.json .
+COPY usb-to-rtsp.py .
+
+CMD [ "python", "usb-to-rtsp.py" ]

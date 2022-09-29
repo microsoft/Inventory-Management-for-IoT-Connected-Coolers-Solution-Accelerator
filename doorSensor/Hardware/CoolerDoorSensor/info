@@ -1,0 +1,84 @@
+{
+  "uuid": "87af167aad1f282b8c2f8e2485a46d6a",
+  "path": "Offline/CoolerDoorSensor",
+  "name": "CoolerDoorSensor",
+  "content": "",
+  "created_at": "2021-04-20 18:54:20",
+  "updated_at": "2021-04-20 23:07:09",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "cf76e395fb4a44f225f465b71c8d3aca",
+      "title": "Sheet_1",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "fee3186e847b42ecb0244c6d4d6aaef8": 1,
+        "78510b8e32e64d8aac288ec6f8151284": 1
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "CON_TERMINAL_BLOCK_02",
+          1,
+          "TERMINAL_BLOCK_2P_5",
+          "J2",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "e98f44b0812c44de84ef8c8e9ff5759f",
+            "uuid": "78510b8e32e64d8aac288ec6f8151284"
+          }
+        ],
+        [
+          "Arduino_Nano_Header",
+          1,
+          "DIP-30_L43.18-W15.24-ARDUINONANO",
+          "J1",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "0476c63fa99e4a998187e5a274bdf1f1",
+            "uuid": "fee3186e847b42ecb0244c6d4d6aaef8"
+          }
+        ]
+      ],
+      "updateTime": 1618971226,
+      "createTime": 1618970851,
+      "histories": [],
+      "created_at": "2021-04-20 19:07:31",
+      "updated_at": "2021-04-20 19:13:46"
+    },
+    {
+      "uuid": "472005ba912d82183667da42f6f0e483",
+      "puuid": "87af167aad1f282b8c2f8e2485a46d6a",
+      "title": "PCB_CoolerDoorSensor_2",
+      "filename": "PCB_CoolerDoorSensor_2.json",
+      "description": "",
+      "docType": "3",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "e98f44b0812c44de84ef8c8e9ff5759f": 1,
+        "0476c63fa99e4a998187e5a274bdf1f1": 1
+      },
+      "BOM": [],
+      "updateTime": 1618985229,
+      "createTime": 1618971158,
+      "histories": [],
+      "created_at": "2021-04-20 19:12:38",
+      "updated_at": "2021-04-20 23:07:09"
+    }
+  ],
+  "sort": [],
+  "title": "CoolerDoorSensor",
+  "foldername": "CoolerDoorSensor",
+  "schfilename": "CoolerDoorSensor.json",
+  "schfilemtime": 1618971227000
+}

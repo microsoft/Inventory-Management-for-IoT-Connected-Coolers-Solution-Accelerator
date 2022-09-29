@@ -1,0 +1,12 @@
+# Copyright (c) Microsoft Corporation. All rights reserved
+# Licensed under the MIT license. See LICENSE file in the project root for more information
+
+FROM	tensorflow/tensorflow:2.6.0	
+
+ENV	DEBIAN_FRONTEND noninteractive
+
+RUN	/bin/rm -rfv /var/lib/apt/lists/* && apt-get clean && apt-get update && apt-get install -y python3-pillow python3-opencv
+
+RUN	pip3 install motpy filterpy 
+
+RUN 	pip3 install azure-iot-device

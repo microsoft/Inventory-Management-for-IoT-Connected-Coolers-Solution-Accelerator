@@ -1,0 +1,45 @@
+{
+    "videoName": "cooler-cam-top.mp4",
+    "events": [
+        {
+            "id": 1,
+            "start": 24,
+            "end": 33
+        },
+        {
+            "id": 2,
+            "start": 51,
+            "end": 57
+        },
+        {
+            "id": 3,
+            "start": 80,
+            "end": 87
+        },
+        {
+            "id": 4,
+            "start": 102,
+            "end": 109
+        },
+        {
+            "id": 5,
+            "start": 123,
+            "end": 130
+        },
+        {
+            "id": 6,
+            "start": 141,
+            "end": 148
+        },
+        {
+            "id": 7,
+            "start": 179,
+            "end": 193
+        },
+        {
+            "id": 8,
+            "start": 210,
+            "end": 229
+        }
+    ]
+}

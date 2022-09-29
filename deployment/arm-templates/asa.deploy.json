@@ -1,0 +1,118 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.1.0.0",
+    "parameters": {
+      "adlsAccountName": {
+        "type": "string"
+      },        
+      "adlsAccountKey": {
+        "type": "string"
+      },
+      "iotHubNamespace": {
+        "type": "string"
+      },
+      "iotHubSharedAccessKey": {
+        "type": "string"
+      },
+      "iotHubSharedAccessName": {
+        "type": "string"
+      },
+      "location": {
+        "type": "string",
+        "defaultValue": "[resourceGroup().location]",
+        "metadata": {
+          "description": "Location for the resources."
+        }
+      }
+    },
+    "variables": {
+      "streamAnalyticsJobName": "ConnectedCoolerASA",
+      "numberOfStreamingUnits": 1
+    },
+    "resources": [
+      {
+        "type": "Microsoft.StreamAnalytics/StreamingJobs",
+        "apiVersion": "2021-10-01-preview",
+        "name": "[variables('streamAnalyticsJobName')]",
+        "location": "[parameters('location')]",
+        "identity": {
+          "type": "SystemAssigned"
+         },
+        "properties": {
+          "sku": {
+            "name": "standard"
+          },
+          "outputStartMode": "JobStartTime",
+          "outputErrorPolicy": "stop",
+          "eventsOutOfOrderPolicy": "adjust",
+          "eventsOutOfOrderMaxDelayInSeconds": 0,
+          "eventsLateArrivalMaxDelayInSeconds": 5,
+          "dataLocale": "en-US",
+          "inputs":[
+            {
+              "name": "iothub1",
+              "properties": {
+                "compression": {
+                  "type": "None"
+                },
+                "serialization": {
+                  "type": "Json",
+                  "properties": {
+                    "encoding": "UTF8",
+                    "format": "LineSeparated"
+                  }
+                },
+                "type": "Stream",
+                "datasource": {
+                  "type": "Microsoft.Devices/IotHubs",
+                    "properties": {
+                      "consumerGroupName": "asa1",
+                      "endpoint": "messages/events",
+                      "iotHubNamespace": "[parameters('iotHubNamespace')]",
+                      "sharedAccessPolicyKey": "[parameters('iotHubSharedAccessKey')]",
+                      "sharedAccessPolicyName": "[parameters('iotHubSharedAccessName')]"
+                    }
+                }
+              }
+            }
+          ],
+          "outputs": [
+            {
+              "name": "connectedcooleroutput",
+              "properties": {
+                "datasource": {
+                    "type": "Microsoft.Storage/Blob",
+                    "properties": {
+                      "authenticationMode": "ConnectionString",
+                      "container": "connectedcoolersasynfs",
+                      "pathPattern": "ContosoCoolerDemo/iotinventoryaction",
+                      "storageAccounts": [
+                        {
+                          "accountName": "[parameters('adlsAccountName')]",
+                          "accountKey": "[parameters('adlsAccountKey')]"
+                        }
+                      ],
+                      "timeFormat": "HH"
+                    }
+                },
+                "serialization": {
+                    "type": "Csv",
+                    "properties": {
+                      "encoding": "UTF8",
+                      "fieldDelimiter": ","
+                    }
+                }
+              }
+            }
+          ],
+          "transformation": {
+            "name": "Transformation",
+            "properties": {
+              "streamingUnits": "[variables('numberOfStreamingUnits')]",
+              "query": "SELECT\r\n    CAST(time AS datetime) AS PickTime, \r\n    CAST(cooler_id AS nvarchar(max)) AS CoolerId, \r\n    type AS ItemSku,\r\n    CASE event \r\n        WHEN 'itemAdded' THEN -1\r\n        WHEN 'itemRemoved' THEN 1\r\n        ELSE 0\r\n    END AS Quantity\r\nINTO connectedcooleroutput\r\nFROM iothub1\r\nWHERE event IS NOT NULL"
+            }
+          }
+        }
+      }
+    ]
+  }

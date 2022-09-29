@@ -1,0 +1,128 @@
+[
+    {
+        "name": "inventoryprojected",
+        "columns": [
+            "PickListFulfilledTimestamp",
+            "CoolerId",
+            "ItemSku",
+            "PredQuantity"
+        ]
+    },
+    {
+        "name": "inventorytransaction",
+        "columns": [
+            "TransactionId",
+            "TransactionPlannedTimestamp",
+            "TransactionCompletedTimestamp",
+            "FromCoolerId",
+            "ToCoolerId",
+            "InventoryTransactionTypeId"
+        ]
+    },
+    {
+        "name": "inventorytransactiontype",
+        "columns": [
+            "InventoryTransactionTypeId",
+            "InventoryTransactionTypeName",
+            "InventoryTransactionTypeDescription"
+        ]
+    },
+    {
+        "name": "inventorytransactionunserializeditem",
+        "columns": [
+            "TransactionId",
+            "ItemSku",
+            "Quantity"
+        ]
+    },
+    {
+        "name": "item",
+        "columns": [
+            "ItemSku",
+            "ListPrice",
+            "MinimumStockQuantity",
+            "ItemName",
+            "ItemDescription",
+            "ShelfLifeDays",
+            "MinimumStorageTemperature",
+            "MaximumStorageTemperature"
+        ]
+    },
+    {
+        "name": "location",
+        "columns": [
+            "LocationId",
+            "LocationName",
+            "LocationLatitude",
+            "LocationLongitude"
+        ]
+    },
+    {
+        "name": "picklist",
+        "columns": [
+            "PickListId",
+            "PickListFulfilledTimestamp",
+            "CoolerId"
+        ]
+    },
+    {
+        "name": "restockprojected",
+        "columns": [
+            "CoolerId",
+            "ProjectedDateTime",
+            "PreviousProjectedDateTime"
+        ]
+    },
+    {
+        "name": "picklistitem",
+        "columns": [
+            "PickListId",
+            "ItemSku",
+            "ItemQuantity"
+        ]
+    },
+    {
+        "name": "inventoryprojected",
+        "columns": [
+            "PickListFulfilledTimestamp",
+            "CoolerId",
+            "ItemSku",
+            "PredQuantity"
+        ]
+    },
+    {
+        "name": "cooler",
+        "columns": [
+            "CoolerId",
+            "LocationId",
+            "CoolerName"
+        ]
+    },
+    {
+        "name": "iotinventoryaction",
+        "columns": [
+            "PickTime",
+            "CoolerId",
+            "ItemSku",
+            "Quantity"
+        ]
+    },
+    {
+        "name": "iotinventoryaction2",
+        "columns": [
+            "PickTime",
+            "CoolerId",
+            "ItemSku",
+            "Quantity"
+        ]
+    },
+    {
+        "name": "iotinventoryaction3",
+        "columns": [
+            "PickTime",
+            "CoolerId",
+            "ItemSku",
+            "Quantity"
+        ]
+    }
+]

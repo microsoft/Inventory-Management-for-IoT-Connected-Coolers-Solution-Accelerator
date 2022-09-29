@@ -1,0 +1,2 @@
+InventoryTransactionTypeId,InventoryTransactionTypeName,InventoryTransactionTypeDescription
+1,Replenishment,The movement of material from reserve to forward picking to resupply the forward picking locations

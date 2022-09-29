@@ -1,3 +1,26 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:924b2190cbe6a50780fa9bded4137c8f90728b095bda9e3a04643706b4aa1528
-size 562
+[
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemAdded",
+        "time": 14.5,
+        "frame": 290,
+        "type": "diet-contoso",
+        "pos": [
+            153.2197413919032,
+            287.51812043469613
+        ]
+    },
+    {
+        "camera": "top",
+        "cooler_id": "DemoCooler",
+        "event": "itemAdded",
+        "time": 14.5,
+        "frame": 290,
+        "type": "diet-contoso",
+        "pos": [
+            152.505128462866,
+            284.65242896910763
+        ]
+    }
+]

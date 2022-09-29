@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e6a129e97a48500bd82aff14925338167e9e7c3e23b654b3db15f32eb7b42eda
-size 403
+{
+  "$schema-version": "0.0.1",
+  "description": "",
+  "image": {
+    "repository": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/recordingmanager",
+    "tag": {
+      "version": "0.0.1",
+      "platforms": {
+        "amd64": "./Dockerfile.amd64",
+        "amd64.debug": "./Dockerfile.amd64.debug"
+      }
+    },
+    "buildOptions": [],
+    "contextPath": "./"
+  },
+  "language": "python"
+}

@@ -1,3 +1,16 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:41ba338e791df49cf3d44c669c510526d3d2ba8f25d7c99f46f974be99efabcf
-size 340
+{
+  "$schema-version": "0.0.1",
+  "description": "",
+  "image": {
+    "repository": "$CONTAINER_REGISTRY_NAME_myacr.azurecr.io/coolermodel",
+    "tag": {
+      "version": "0.0.1",
+      "platforms": {
+        "amd64": "./Dockerfile"
+      }
+    },
+    "buildOptions": [],
+    "contextPath": "./"
+  },
+  "language": "python"
+}

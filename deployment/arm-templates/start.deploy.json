@@ -1,3 +1,732 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:971d7c1124c9e8281e2c85aac85f42c7af5cd53563ca16a745fb6d2ba9fb13aa
-size 28829
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "This template is orchestrates a deployment of Azure services and supporting resources needed for running this solution. It is a subscription level deployment and uses both nested and linked templates for scope and modularity."
+  },
+  "parameters": {
+    "resourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group for deploying new resources. e.g. 'rg-ai-cooler-sa'. It should be unique for each deployment"
+      }
+    },
+    "useExistingEdgeDevice": {
+      "metadata": {
+        "description": "Select false for a simulated solution. Select true for a POC solution. If true, this deployment will override the modules that are currently deployed on the specified device."
+      },
+      "defaultValue": false,
+      "type": "bool"
+    },
+    "existingHubName": {
+      "metadata": {
+        "description": "An (optional) existing IoT Hub to use instead of creating a new one."
+      },
+      "defaultValue": "",
+      "type": "string"
+    },
+    "existingHubNameResourceGroup": {
+      "metadata": {
+        "description": "The resource group name of the existing IoT Hub if specified."
+      },
+      "defaultValue": "",
+      "type": "string"
+    },
+    "existingDeviceName": {
+      "metadata": {
+        "description": "An (optional) existing edge device to use instead of creating a simulated device. It is expected to already be registered with the specified existing hub."
+      },
+      "defaultValue": "",
+      "type": "string"
+    },
+    "existingDeviceIpAddress": {
+      "metadata": {
+        "description": "The IP Address of the default switch assigned to the Windows host (i.e. existing edge device) for the EFLOW VM."
+      },
+      "defaultValue": "",
+      "type": "string"
+    }
+  },
+  "variables": {
+    "_artifactsLocation": "https://storageaicooler.blob.core.windows.net/aicooler/",
+    "Depolymentjsonprefix": "[if(parameters('useExistingEdgeDevice'),'deployment.physical.template','deployment.simulated.template')]",
+    "_artifactsLocationSasToken": "?sp=rl&st=2022-08-30T17:15:29Z&se=2022-12-31T01:15:29Z&sv=2021-06-08&sr=c&sig=aYYZZYSOO%2B0exPv1cRaKJtiDyn0z%2FSn8S3xdyB8AJRQ%3D",
+    "location": "[deployment().location]",
+    "applicationType": "ai-cooler-sa",
+    "managedIdentityName": "[concat(variables('namePrefix'),'-deployment-identity-',uniqueString(parameters('resourceGroup')))]",
+    "managedIdentityId": "[concat(subscription().id,'/resourceGroups/',parameters('resourceGroup'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]",
+    "simulatedDeviceName": "[concat(variables('namePrefix'),'-iot-edge-device')]",
+    "VMResourceGroup": "[concat(parameters('resourceGroup'),'VM')]",
+    "deviceName": "[if(parameters('useExistingEdgeDevice'),parameters('existingDeviceName'),variables('simulatedDeviceName'))]",
+    "resourceTags": {
+      "sample": "inventory-management-for-iot-connected-coolers-solution-accelerator"
+    },
+    "namePrefix": "aicooler"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('resourceGroup')]",
+      "comments": "The primary resource group that will be used for new resources.",
+      "location": "[deployment().location]",
+      "properties": {},
+      "tags": "[variables('resourceTags')]"
+    },
+    {
+      "condition": "[not(parameters('useExistingEdgeDevice'))]",
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('VMResourceGroup')]",
+      "comments": "The primary resource group that will be used for new resources.",
+      "location": "[deployment().location]",
+      "properties": {},
+      "tags": "[variables('resourceTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-managed-identity",
+      "comments": "This is a nested deployment into the main resource group. The managed identity is necessary for running script during deployment.",
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "dependsOn": [
+        "[parameters('resourceGroup')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "Inner"
+        },
+        "parameters": {
+          "managedIdentityName": {
+            "value": "[variables('managedIdentityName')]"
+          }
+        },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "managedIdentityName": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "roleAssignmentName": "[guid(concat(resourceGroup().id),parameters('managedIdentityName'), 'contributor')]",
+            "roleDefinitionId": "[concat(resourceGroup().id, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "name": "[parameters('managedIdentityName')]",
+              "apiVersion": "2018-11-30",
+              "location": "[resourceGroup().location]"
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2018-09-01-preview",
+              "name": "[variables('roleAssignmentName')]",
+              "properties": {
+                "roleDefinitionId": "[variables('roleDefinitionId')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities',parameters('managedIdentityName')), '2018-11-30').principalId]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ],
+          "outputs": {
+            "managedIdentity": {
+              "type": "object",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities',parameters('managedIdentityName')), '2018-11-30')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[and(parameters('useExistingEdgeDevice'),not(equals(parameters('existingHubNameResourceGroup'),parameters('resourceGroup'))))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "assign-role-for-existing-resource-group",
+      "comments": "The managed identity needs access to the existing resource group that contains the IoT Hub. If the resource group doesn't exist the deployment will fail.",
+      "dependsOn": [
+        "deploy-managed-identity"
+      ],
+      "resourceGroup": "[parameters('existingHubNameResourceGroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "Inner"
+        },
+        "parameters": {
+          "principalId": {
+            "value": "[reference('deploy-managed-identity').outputs.managedIdentity.value.principalId]"
+          }
+        },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "principalId": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "roleAssignmentName": "[guid(concat(resourceGroup().id), parameters('principalId'), 'contributor')]",
+            "roleDefinitionId": "[concat(resourceGroup().id, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2018-09-01-preview",
+              "name": "[variables('roleAssignmentName')]",
+              "comments": "This role assignment is only needed when the IoT Hub is in a different resource group (to deploy the module manifest).",
+              "properties": {
+                "roleDefinitionId": "[variables('roleDefinitionId')]",
+                "principalId": "[parameters('principalId')]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ],
+          "outputs": {}
+        }
+      }
+    },
+    {
+      "condition": "[not(parameters('useExistingEdgeDevice'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "assign-role-for-VM-resource-group",
+      "comments": "The managed identity needs access to the VM resource group",
+      "dependsOn": [
+        "deploy-managed-identity",
+        "[resourceId('Microsoft.Resources/resourceGroups', variables('VMResourceGroup'))]"
+      ],
+      "resourceGroup": "[variables('VMResourceGroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "Inner"
+        },
+        "parameters": {
+          "principalId": {
+            "value": "[reference('deploy-managed-identity').outputs.managedIdentity.value.principalId]"
+          }
+        },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "principalId": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "roleAssignmentName": "[guid(concat(resourceGroup().id), parameters('principalId'), 'contributor')]",
+            "roleDefinitionId": "[concat(resourceGroup().id, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2018-09-01-preview",
+              "name": "[variables('roleAssignmentName')]",
+              "comments": "This role assignment is only needed when the VM  is in a different resource group (to deploy the module manifest).",
+              "properties": {
+                "roleDefinitionId": "[variables('roleDefinitionId')]",
+                "principalId": "[parameters('principalId')]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ],
+          "outputs": {}
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-storage-account",
+      "comments": "Deploys the storage account",
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/resourceGroups',parameters('resourceGroup'))]"
+      ],
+      "properties": {
+        "templateLink": {
+          "uri": "[concat(variables('_artifactsLocation'),'storage-account.deploy.json',variables('_artifactsLocationSasToken'))]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "namePrefix": {
+            "value": "[variables('namePrefix')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-iot-resources",
+      "comments": "Deploys the supporting IoT resources. There is conditional logic in this template to handle existing resources.",
+      "resourceGroup": "[if(parameters('useExistingEdgeDevice'), parameters('existingHubNameResourceGroup'), parameters('resourceGroup'))]",
+      "dependsOn": [
+        "[parameters('resourceGroup')]"
+      ],
+      "properties": {
+        "templateLink": {
+          "uri": "[concat(variables('_artifactsLocation'),'iot.deploy.json',variables('_artifactsLocationSasToken'))]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "namePrefix": {
+            "value": "[variables('namePrefix')]"
+          },
+          "hubName": {
+            "value": "[if(parameters('useExistingEdgeDevice'),parameters('existingHubName'),'')]"
+          },
+          "hubResourceGroup": {
+            "value": "[if(parameters('useExistingEdgeDevice'),parameters('existingHubNameResourceGroup'),'')]"
+          },
+          "resourceTags": {
+            "value": "[variables('resourceTags')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "register-edge-device.sh",
+      "comments": "This nested deployment uses a deployment script to set modules on the specified edge device.",
+      "dependsOn": [
+        "deploy-iot-resources"
+      ],
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "Inner"
+        },
+        "parameters": {
+          "managedIdentityId": {
+            "value": "[variables('managedIdentityId')]"
+          },
+          "_artifactsLocation": {
+            "value": "[variables('_artifactsLocation')]"
+          },
+          "_artifactsLocationSasToken": {
+            "value": "[variables('_artifactsLocationSasToken')]"
+          },
+          "deviceName": {
+            "value": "[variables('deviceName')]"
+          },
+          "resourceTags": {
+            "value": "[variables('resourceTags')]"
+          },
+          "iotHubName": {
+            "value": "[reference('deploy-iot-resources').outputs.hubName.value]"
+          }
+        },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "baseTime": {
+              "type": "string",
+              "defaultValue": "[utcNow('u')]"
+            },
+            "managedIdentityId": {
+              "type": "string"
+            },
+            "_artifactsLocation": {
+              "type": "string"
+            },
+            "_artifactsLocationSasToken": {
+              "type": "string"
+            },
+            "deviceName": {
+              "type": "string"
+            },
+            "resourceTags": {
+              "type": "object"
+            },
+            "iotHubName": {
+              "type": "string"
+            }
+          },
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "execute-register-edge-device.sh",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[parameters('managedIdentityId')]": {}
+                }
+              },
+              "location": "[resourceGroup().location]",
+              "kind": "AzureCLI",
+              "properties": {
+                "forceUpdateTag": "[parameters('baseTime')]",
+                "azCliVersion": "2.29.0",
+                "primaryScriptUri": "[concat(parameters('_artifactsLocation'),'register-edge-device.sh', parameters('_artifactsLocationSasToken'))]",
+                "environmentVariables": [
+                  {
+                    "name": "IOTHUB",
+                    "value": "[parameters('iotHubName')]"
+                  },
+                  {
+                    "name": "EDGE_DEVICE",
+                    "value": "[parameters('deviceName')]"
+                  }
+                ],
+                "retentionInterval": "P1D",
+                "timeout": "PT15M",
+                "cleanupPreference": "OnSuccess"
+              },
+              "tags": "[parameters('resourceTags')]"
+            }
+          ],
+          "outputs": {
+            "deviceConnectionString": {
+              "type": "string",
+              "value": "[reference('execute-register-edge-device.sh').outputs.deviceConnectionString]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[not(parameters('useExistingEdgeDevice'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-simulated-edge-device",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/resourceGroups', variables('VMResourceGroup'))]",
+        "assign-role-for-VM-resource-group",
+        "deploy-iot-resources",
+        "register-edge-device.sh"
+      ],
+      "resourceGroup": "[variables('VMResourceGroup')]",
+      "properties": {
+        "templateLink": {
+          "uri": "[concat(variables('_artifactsLocation'),'mariner-vm.latest.json',variables('_artifactsLocationSasToken'))]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "vmName": {
+            "value": "[variables('simulatedDeviceName')]"
+          },
+          "resourceTag": {
+            "value": "[variables('resourceTags')]"
+          },
+          "_artifactsLocation": {
+            "value": "[concat(variables('_artifactsLocation'), 'mariner-vm-init.sh', variables('_artifactsLocationSasToken'))]"
+          },
+          "edgeDeviceConnectionString": {
+            "value": "[reference('register-edge-device.sh').outputs.deviceConnectionString.value]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-and-configure-modules",
+      "comments": "This nested deployment uses a deployment script to set modules on the specified edge device.",
+      "dependsOn": [
+        "deploy-storage-account",
+        "[parameters('resourceGroup')]",
+        "[variables('VMResourceGroup')]",
+        "register-edge-device.sh",
+        "deploy-simulated-edge-device"
+      ],
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "Inner"
+        },
+        "parameters": {
+          "managedIdentityId": {
+            "value": "[variables('managedIdentityId')]"
+          },
+          "_artifactsLocation": {
+            "value": "[variables('_artifactsLocation')]"
+          },
+          "_artifactsLocationSasToken": {
+            "value": "[variables('_artifactsLocationSasToken')]"
+          },
+          "Depolymentjsonprefix": {
+            "value": "[variables('Depolymentjsonprefix')]"
+          },
+          "deviceName": {
+            "value": "[variables('deviceName')]"
+          },
+          "existingDeviceIpAddress": {
+            "value": "[parameters('existingDeviceIpAddress')]"
+          },
+          "resourceGroup": {
+            "value": "[parameters('resourceGroup')]"
+          },
+          "resourceTags": {
+            "value": "[variables('resourceTags')]"
+          },
+          "iotHubName": {
+            "value": "[reference('deploy-iot-resources').outputs.hubName.value]"
+          },
+          "iotHubConnectionString": {
+            "value": "[reference('deploy-iot-resources').outputs.connectionString.value]"
+          },
+          "storageAccountName": {
+            "value": "[reference('deploy-storage-account').outputs.storageAccountName.value]"
+          }
+        },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "baseTime": {
+              "type": "string",
+              "defaultValue": "[utcNow('u')]"
+            },
+            "managedIdentityId": {
+              "type": "string"
+            },
+            "_artifactsLocation": {
+              "type": "string"
+            },
+            "_artifactsLocationSasToken": {
+              "type": "string"
+            },
+            "Depolymentjsonprefix": {
+              "type": "string"
+            },
+            "existingDeviceIpAddress": {
+              "type": "string"
+            },
+            "deviceName": {
+              "type": "string"
+            },
+            "resourceGroup": {
+              "type": "string"
+            },
+            "resourceTags": {
+              "type": "object"
+            },
+            "iotHubName": {
+              "type": "string"
+            },
+            "iotHubConnectionString": {
+              "type": "string"
+            },
+            "storageAccountName": {
+              "type": "string"
+            }
+          },
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "execute-deploy-modules.sh",
+              "location": "[resourceGroup().location]",
+              "kind": "AzureCLI",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[parameters('managedIdentityId')]": {}
+                }
+              },
+              "comments": "The values for VIDEO_OUTPUT_FOLDER_ON_DEVICE, VIDEO_INPUT_FOLDER_ON_DEVICE and APPDATA_FOLDER_ON_DEVICE must match the hardcoded values in prepare-device.sh.",
+              "properties": {
+                "forceUpdateTag": "[parameters('baseTime')]",
+                "azCliVersion": "2.29.0",
+                "primaryScriptUri": "[concat(parameters('_artifactsLocation'),'deploy-modules.sh',parameters('_artifactsLocationSasToken'))]",
+                "supportingScriptUris": [
+                  "[uri(parameters('_artifactsLocation'),concat(parameters('Depolymentjsonprefix'),'.json',parameters('_artifactsLocationSasToken')))]"
+                ],
+                "environmentVariables": [
+                  {
+                    "name": "DEPLOYMENT_MANIFEST_TEMPLATE_URL",
+                    "value": "[uri(parameters('_artifactsLocation'),concat(parameters('Depolymentjsonprefix'),'.json', parameters('_artifactsLocationSasToken')))]"
+                  },
+                  {
+                    "name": "HUB_NAME",
+                    "value": "[parameters('iotHubName')]"
+                  },
+                  {
+                    "name": "DEVICE_ID",
+                    "value": "[parameters('deviceName')]"
+                  },
+                  {
+                    "name": "EXISTING_DEVICE_IP_ADDRESS",
+                    "value": "[parameters('existingDeviceIpAddress')]"
+                  },
+                  {
+                    "name": "VIDEO_OUTPUT_FOLDER_ON_DEVICE",
+                    "value": "/var/media/"
+                  },
+                  {
+                    "name": "AZURE_STORAGE_ACCOUNT",
+                    "value": "[parameters('storageAccountName')]"
+                  },
+                  {
+                    "name": "RESOURCE_GROUP",
+                    "value": "[parameters('resourceGroup')]"
+                  },
+                  {
+                    "name": "SUBSCRIPTION_ID",
+                    "value": "[subscription().subscriptionId]"
+                  },
+                  {
+                    "name": "REGISTRY_NAME",
+                    "value": "aicooleracr"
+                  },
+                  {
+                    "name": "REGISTRY_USER_NAME",
+                    "value": "aicoolercr"
+                  },
+                  {
+                    "name": "REGISTRY_PASSWORD",
+                    "value": "5aYTF/00i4Kik/CAiE1Pz1L7lu1L3CEw"
+                  },
+                  {
+                    "name": "RABBITMQ_CONTAINER_HOST",
+                    "value": "rabbitmq-broker"
+                  },
+                  {
+                    "name": "RABBITMQ_DEFAULT_USER",
+                    "value": "rabbituser"
+                  },
+                  {
+                    "name": "RABBITMQ_DEFAULT_PASS",
+                    "value": "rabbitpassword"
+                  },
+                  {
+                    "name": "RABBITMQ_HOSTNAME",
+                    "value": "rabbitmq-broker"
+                  },
+                  {
+                    "name": "DEPOLYMENTJSONPREFIX",
+                    "value": "[parameters('Depolymentjsonprefix')]"
+                  }
+                ],
+                "retentionInterval": "P1D",
+                "timeout": "PT30M",
+                "cleanupPreference": "OnSuccess"
+              },
+              "tags": "[parameters('resourceTags')]"
+            }
+          ],
+          "outputs": {}
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-synapse",
+      "comments": "Deploys the core resources for the webapp",
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "dependsOn": [
+        "deploy-and-configure-modules"
+      ],
+      "properties": {
+        "templateLink": {
+          "uri": "[concat(variables('_artifactsLocation'),'synapse.deploy.json',variables('_artifactsLocationSasToken'))]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "_artifactsLocation": {
+            "value": "[variables('_artifactsLocation')]"
+          },
+          "_artifactsLocationSasToken": {
+            "value": "[variables('_artifactsLocationSasToken')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-asa",
+      "comments": "Deploys the core resources for the webapp",
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "dependsOn": [
+        "deploy-synapse"
+      ],
+      "properties": {
+        "templateLink": {
+          "uri": "[concat(variables('_artifactsLocation'),'asa.deploy.json',variables('_artifactsLocationSasToken'))]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "adlsAccountName": {
+            "value": "[reference('deploy-synapse').outputs.adlsaccountname.value]"
+          },
+          "adlsAccountKey": {
+            "value": "[reference('deploy-synapse').outputs.adlsaccountkey.value]"
+          },
+          "iotHubNamespace": {
+            "value": "[reference('deploy-iot-resources').outputs.iotHubNamespace.value]"
+          },
+          "iotHubSharedAccessKey": {
+            "value": "[reference('deploy-iot-resources').outputs.iotHubSharedAccessPolicyKey.value]"
+          },
+          "iotHubSharedAccessName": {
+            "value": "[reference('deploy-iot-resources').outputs.iotHubSharedAccessPolicyName.value]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "deploy-webapp",
+      "comments": "Deploys the core resources for the webapp",
+      "resourceGroup": "[parameters('resourceGroup')]",
+      "dependsOn": [
+        "deploy-asa"
+      ],
+      "properties": {
+        "templateLink": {
+          "uri": "[concat(variables('_artifactsLocation'),'webapp.deploy.json',variables('_artifactsLocationSasToken'))]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "useExistingEdgeDevice": {
+            "value": "[parameters('useExistingEdgeDevice')]"
+          },
+          "resourceTags": {
+            "value": "[variables('resourceTags')]"
+          },
+          "_artifactsLocation": {
+            "value": "[variables('_artifactsLocation')]"
+          },
+          "_artifactsLocationSasToken": {
+            "value": "[variables('_artifactsLocationSasToken')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "pid-158c9b70-6767-44a6-b677-8ac4ceb0502f",
+      "location": "[deployment().location]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

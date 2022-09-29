@@ -1,3 +1,158 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:bd70ebb1490d918066500f198ff90f7cc816dd9d83f9807dbf8104758a4cc7b8
-size 5712
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "metadata": {
+      "description": "This template is orchestrates a deployment of an example user interface for demonstrating the capabilities of the AI Cooler Solution Acceleratoer."
+    },
+    "parameters": {
+      "useExistingEdgeDevice": {
+        "type": "bool"
+      },   
+      "resourceTags": {
+          "defaultValue": {
+              "sample": "inventory-management-for-iot-connected-coolers-solution-accelerator"
+          },
+          "type": "Object"
+      },
+      "_artifactsLocation": {
+          "type": "string"
+      },
+      "_artifactsLocationSasToken": {
+          "type": "string"
+      }
+    },
+    "variables": {  
+      "mapsName": "[concat('aicooler-map',substring(uniqueString(subscription().id,resourceGroup().name),1,4))]",
+      "webappName": "[concat('aicooler-app',substring(uniqueString(subscription().id,resourceGroup().name),1,4))]",
+      "appServiceName": "[concat('aicooler-asp',substring(uniqueString(subscription().id,resourceGroup().name),1,4))]"
+    },
+    "resources": [
+      {
+          "name": "[variables('mapsName')]",
+          "type": "Microsoft.Maps/accounts",
+          "apiVersion": "2021-02-01",
+          "location": "[resourceGroup().location]",
+          "sku": {
+             "name": "S0"
+          }, 
+          "kind" : "Gen1" 
+      },  
+      {
+        "type": "Microsoft.Web/serverfarms",
+        "apiVersion": "2018-02-01",
+        "name": "[variables('appServiceName')]",
+        "location": "[resourceGroup().location]",
+        "sku": {
+          "name": "S1",
+          "tier": "Standard",
+          "size": "S1",
+          "family": "S",
+          "capacity": 1
+        },
+        "kind": "app",
+        "tags": "[parameters('resourceTags')]",
+        "properties": {
+          "perSiteScaling": false,
+          "maximumElasticWorkerCount": 1,
+          "isSpot": false,
+          "reserved": false,
+          "isXenon": false,
+          "hyperV": false,
+          "targetWorkerCount": 0,
+          "targetWorkerSizeId": 0
+        }
+      },
+      {
+        "type": "Microsoft.Web/sites",
+        "apiVersion": "2018-11-01",
+        "name": "[variables('webappName')]",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+          "[variables('appServiceName')]"
+        ],
+        "tags": "[parameters('resourceTags')]",
+        "kind": "app",
+        "properties": {
+          "enabled": true,
+          "hostNameSslStates": [
+            {
+              "name": "[concat(variables('webappName'), '.azurewebsites.net')]",
+              "sslState": "Disabled",
+              "hostType": "Standard"
+            },
+            {
+              "name": "[concat(variables('webappName'), '.scm.azurewebsites.net')]",
+              "sslState": "Disabled",
+              "hostType": "Repository"
+            }
+          ],
+          "serverFarmId": "[concat(subscription().id,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/serverfarms/', variables('appServiceName'))]",
+          "reserved": false,
+          "isXenon": false,
+          "hyperV": false,
+          "siteConfig": {},
+          "scmSiteAlsoStopped": false,
+          "clientAffinityEnabled": true,
+          "clientCertEnabled": false,
+          "hostNamesDisabled": false,
+          "containerSize": 0,
+          "dailyMemoryTimeQuota": 0,
+          "httpsOnly": false,
+          "redundancyMode": "None"
+        },
+        "resources": [
+          {
+            "type": "config",
+            "apiVersion": "2018-11-01",
+            "name": "web",
+            "dependsOn": [
+              "[variables('webappName')]",
+              "MSDeploy"
+            ],
+            "properties": {
+              "webSocketsEnabled": true,
+              "alwaysOn": true
+            }
+          },
+          {
+            "type": "config",
+            "apiVersion": "2018-11-01",
+            "name": "appsettings",
+            "dependsOn": [
+              "[variables('webappName')]",
+              "MSDeploy"
+            ],
+            "properties": {
+              "AZURE_MAPS_SUBSCRIPTION_KEY": "[listKeys(resourceId('Microsoft.Maps/accounts', variables('mapsName')), providers('Microsoft.Maps', 'accounts').apiVersions[0]).primaryKey]",              
+              "SYNAPSE_SERVER": "<your-synapse-server-address-here>",
+              "SYNAPSE_CLIENT_ID": "<your-synapse-client-id-here>",
+              "SYNAPSE_TENANT_ID": "<your-aad-tenant-id-here>",
+              "SYNAPSE_CLIENT_SECRET": "<your-synapse-client-secret-here>",
+              "APP_IS_DEMO": "[if(parameters('useExistingEdgeDevice'), 'false', 'true')]",
+              "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "7",
+              "WEBSITE_NODE_DEFAULT_VERSION": "~14",
+              "SCM_DO_BUILD_DURING_DEPLOYMENT": true
+            }
+          },
+          {
+            "type": "Extensions",
+            "apiVersion": "2018-11-01",
+            "name": "MSDeploy",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+              "[variables('webappName')]"
+            ],
+            "properties": {
+              "packageUri": "[concat(parameters('_artifactsLocation'),'connected-cooler-app.zip', parameters('_artifactsLocationSasToken'))]"
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "WebAppURL": {
+        "type": "string",
+        "value": "[concat('https://', variables('webappName'), '.azurewebsites.net')]"
+      }
+    }
+  }

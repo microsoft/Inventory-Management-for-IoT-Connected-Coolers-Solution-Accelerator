@@ -1,3 +1,221 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:8fa3da720fa0a8b10d09b7f3dec9e1093243f4a1cd283eb4d63fccd165422ac2
-size 9654
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The remote location for resolving supporting files."
+            }
+        },
+        "vmName": {
+            "type": "String"
+        },
+        "resourceTag": {
+            "type": "object",
+            "defaultValue": {
+                "sample": "inventory-management-for-iot-connected-coolers-solution-accelerator"
+            }
+        },
+        "virtualMachineSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2s_v3"
+        },
+        "adminUsername": {
+            "defaultValue": "mariner",
+            "type": "String",
+            "metadata": {
+                "description": "Username for the Virtual Machine."
+            }
+        },
+        "authenticationType": {
+            "defaultValue": "password",
+            "allowedValues": [
+                "sshPublicKey",
+                "password"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "adminPasswordOrKey": {
+            "defaultValue": "Edge&Iot2022",
+            "type": "SecureString",
+            "metadata": {
+                "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "edgeDeviceConnectionString": {
+            "type": "string",
+            "metadata": {
+                "description": "The connection string that will be used to register the device with the IoT Hub."
+            }
+        }
+    },
+    "variables": {
+        "dcs": "[parameters('edgeDeviceConnectionString')]",
+        "location": "[resourceGroup().location]",
+        "publicIPAddressName": "[format('{0}PublicIP', parameters('vmName'))]",
+        "networkInterfaceName": "[format('{0}NetInt', parameters('vmName'))]",
+        "networkSecurityGroupName": "[concat(parameters('vmName'),'-nsg')]",
+        "virtualNetworkName": "[concat(parameters('vmName'),'-vnet')]",
+        "subnetName": "[concat(parameters('vmName'),'-subnet')]",
+        "osDiskType": "Standard_LRS",
+        "subnetAddressPrefix": "10.1.0.0/24",
+        "addressPrefix": "10.1.0.0/16",
+        "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+                        "keyData": "[parameters('adminPasswordOrKey')]"
+                    }
+                ]
+            }
+        },
+        "customData": "[base64(concat('#cloud-config\n\nruncmd:\n  - |\n      sudo yum install moby-engine -y\n      wget https://packages.microsoft.com/config/rhel/8/packages-microsoft-prod.rpm -O packages-microsoft-prod.rpm\n      sudo rpm -ivh packages-microsoft-prod.rpm\n      sudo yum install aziot-edge -y\n      sudo iotedge system restart\n      sudo iotedge config mp --connection-string \"',  variables('dcs'),'\"\n      sudo iotedge config apply\n      wget \"', parameters('_artifactsLocation'), '\" -O mariner-vm-init.sh\n      bash mariner-vm-init.sh'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2021-05-01",
+            "name": "[variables('networkInterfaceName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                }
+            },
+            "tags": "[parameters('resourceTag')]"
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2021-05-01",
+            "name": "[variables('networkSecurityGroupName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "SSH",
+                        "properties": {
+                            "priority": 1000,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22"
+                        }
+                    }
+                ]
+            },
+            "tags": "[parameters('resourceTag')]"
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2021-05-01",
+            "name": "[variables('virtualNetworkName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2021-05-01",
+            "name": "[format('{0}/{1}', variables('virtualNetworkName'), variables('subnetName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "[variables('subnetAddressPrefix')]",
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2021-05-01",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-11-01",
+            "name": "[parameters('vmName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('osDiskType')]"
+                        },
+                        "diskSizeGB": 32
+                    },
+                    "imageReference": {
+                        "publisher": "MicrosoftCBLMariner",
+                        "offer": "cbl-mariner",
+                        "sku": "cbl-mariner-2",
+                        "version": "latest"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPasswordOrKey')]",
+                    "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), null(), variables('linuxConfiguration'))]",
+                    "customData": "[variables('customData')]"
+                }
+            },
+            "tags": "[parameters('resourceTag')]"
+        }
+    ],
+    "outputs": {
+    }
+}
